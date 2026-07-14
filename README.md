@@ -192,15 +192,16 @@ Clear everything
 
 ### Home Screen
 
-![Home Screen](screenshots/home.png.png)
+![Home Screen](screenshots/home.png)
 
 ### Voice Recognition
 
-![Voice Recognition](screenshots/voice-command.png.png)
+![Voice Recognition](screenshots/voice-command.png)
 
 ### Shopping List
 
-![Shopping List](screenshots/shopping-list.png.png)
+![Shopping List](screenshots/shopping-list.png)
+
 ## Browser Compatibility
 
 Recommended browsers:
