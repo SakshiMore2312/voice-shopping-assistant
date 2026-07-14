@@ -1,70 +1,301 @@
-# VoiceCart 🎙️🛒 - Enterprise Voice Shopping Assistant
+# VoiceCart - Voice Command Shopping Assistant
 
-**VoiceCart** is a professional, enterprise-grade shopping list web application that processes voice commands to manage shopping lists hands-free. Built using **React (Vite)** and **Vanilla CSS** with a clean slate design system, it uses the native **Web Speech API** for speech recognition and the **SpeechSynthesis API** for text-to-speech feedback.
+## Live Demo
 
----
+Application: https://voice-shopping-assistant-indol.vercel.app/
 
-## 🛠️ Tech Stack & Design
-*   **Framework**: React (Vite)
-*   **Styling**: Vanilla CSS (Slate/Indigo enterprise theme, optimized typography, keyboard focus outlines, high-contrast states)
-*   **Speech Services**: Browser-Native Web Speech API (zero external cloud costs)
-*   **State Management**: React Hooks (`useState`, `useCallback`, `useMemo`) synchronized with `localStorage`
-*   **Zero Dependencies**: Minimal setup utilizing only React and native browser capabilities.
+GitHub Repository: https://github.com/SakshiMore2312/voice-shopping-assistant
 
 ---
 
-## 📐 Architecture & Rationale (200-Word Interview Write-up)
-> Our solution implements a browser-native, client-side architecture using React (Vite) and Vanilla CSS, eliminating backend latency and API costs. Speech recognition is powered by the browser's Web Speech API (`SpeechRecognition`), supporting multilingual audio streams (English, Hindi, Spanish). A custom rule-based Natural Language Processing (NLP) parser extracts verbs, quantities, organic preferences, and price filters using token-matching regex patterns. The application uses the `SpeechSynthesis` API to provide real-time audio confirmations, making it hands-free and accessible. State management relies on React's hook architecture (`useSpeechRecognition`, `useCallback`) synchronized with `localStorage` for offline persistence. To optimize UX, the app uses an enterprise-grade slate dashboard, a live status bar, a collapsible developer command console showing structured JSON intents, and a dynamic inventory substitution system that handles out-of-stock items interactively (via voice confirmation prompts). This architecture delivers a responsive, production-quality assistant requiring zero external server dependencies.
+## Overview
+
+VoiceCart is a React-based web application that enables users to manage their shopping list using natural voice commands. The application leverages the browser's Web Speech API for speech recognition and the SpeechSynthesis API for voice feedback, providing a hands-free shopping experience.
+
+The project demonstrates frontend engineering concepts such as custom React hooks, natural language command parsing, state management, performance optimization, accessibility, and modular application architecture.
 
 ---
 
-## 🎙️ Sample Voice Commands
+## Features
 
-### 🇬🇧 English
-* **Add Items**: *"Add 3 bottles of water"*, *"I need some chocolate cookies"*, *"Add organic eggs"*
-* **Remove Items**: *"Remove white bread"*, *"Delete cookies"*
-* **Search / Filter**: *"Find potato chips"*, *"Find toothpaste under 5 dollars"*
-* **Clear**: *"Clear my list"*
+### Voice Commands
 
-### 🇮🇳 Hindi (हिन्दी)
-* **Add Items**: *"तीन सेब जोड़ें"*, *"दूध डालो"*, *"पानी जोड़ो"*
-* **Remove Items**: *"सेब हटाओ"*, *"दूध निकालें"*
-* **Search / Filter**: *"चॉकलेट खोजें"*, *"चिप्स पाँच रुपये से कम"*
-* **Clear**: *"सूची साफ करें"*
+- Add products using voice
+- Remove products from the shopping list
+- Update product quantities
+- Clear the shopping list
+- Search products using voice
 
-### 🇪🇸 Spanish (Español)
-* **Add Items**: *"Añadir dos de leche"*, *"Necesito tres manzanas"*
-* **Remove Items**: *"Quitar pan"*, *"Elimina galletas"*
-* **Search**: *"Buscar chocolate"*, *"Refresco menos de 5 dólares"*
-* **Clear**: *"Limpiar lista"*
+### Natural Language Processing
+
+- Intent detection
+- Quantity extraction
+- Singular and plural normalization
+- Typo-tolerant product matching
+- Filtering of unrelated speech
+- Category-based search
+- Price-based filtering
+
+### Shopping List Management
+
+- Duplicate item detection
+- Automatic quantity updates
+- Category-wise organization
+- Estimated total cost calculation
+- Local storage persistence
+- Support for custom items
+
+### Recommendation Engine
+
+- Frequently bought together suggestions
+- Seasonal recommendations
+- Recently purchased recommendations
+
+### Accessibility
+
+- Keyboard navigation
+- ARIA labels
+- Focus indicators
+- Live announcements
+- Reduced motion support
+
+### Error Handling
+
+- React Error Boundary
+- Browser compatibility checks
+- Microphone permission handling
+- Speech recognition timeout handling
+- Toast notifications
 
 ---
 
-## 🏃 How to Run Locally
+## Technology Stack
 
-### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) installed (v18.0.0 or higher recommended).
+### Frontend
 
-### Steps
-1. **Clone the repository**:
-   ```bash
-   git clone <your-repo-url>
-   cd voice-shopping-assistant
-   ```
+- React
+- Vite
+- JavaScript (ES6+)
+- CSS
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+### Browser APIs
 
-3. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
-   Open your browser and navigate to `http://localhost:5173`. Make sure to **grant microphone permissions** when prompted!
+- Web Speech API
+- SpeechSynthesis API
+- Local Storage API
 
-4. **Build for production**:
-   ```bash
-   npm run build
-   ```
-   This creates a static production bundle in the `dist/` directory, ready to be hosted on Vercel, Netlify, or GitHub Pages.
+### React Concepts
+
+- Functional Components
+- Custom Hooks
+- useState
+- useEffect
+- useMemo
+- useCallback
+- React.memo
+
+---
+
+## Project Structure
+
+```
+voice-shopping-assistant/
+│
+├── public/
+│
+├── src/
+│   ├── components/
+│   ├── hooks/
+│   ├── utils/
+│   ├── data/
+│   ├── styles/
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── package.json
+├── vite.config.js
+├── index.html
+└── README.md
+```
+
+---
+
+## Supported Voice Commands
+
+### Add Products
+
+```
+Add milk
+Buy  apples
+Add organic eggs
+```
+
+### Remove Products
+
+```
+Remove milk
+Delete bananas
+Remove bread
+```
+
+### Update Quantity
+
+```
+Increase milk quantity to 5
+Reduce apples to 2
+Set bread quantity to 4
+```
+
+### Search Products
+
+```
+Find dairy products
+Find organic apples
+Search snacks
+Find toothpaste under 5 dollars
+```
+
+### Clear Shopping List
+
+```
+Clear my shopping list
+Clear everything
+```
+
+---
+
+## Application Workflow
+
+1. User speaks a command.
+2. Speech Recognition converts voice into text.
+3. The NLP parser extracts the user's intent.
+4. Product matching identifies the requested item.
+5. Shopping list state is updated.
+6. Recommendations are generated.
+7. Voice feedback confirms the action.
+8. Data is stored in Local Storage.
+
+---
+
+## Performance Optimizations
+
+- Memoized React components using React.memo
+- useMemo for expensive computations
+- useCallback for event handlers
+- Optimized rendering
+- Cleanup of speech recognition listeners
+- Efficient state updates
+
+---
+
+## Screenshots
+
+### Home Screen
+
+![Home Screen](./screenshots/home.png)
+
+### Voice Recognition
+
+![Voice Recognition](./screenshots/voice-command.png)
+
+### Shopping List
+
+![Shopping List](./screenshots/shopping-list.png)
+
+## Browser Compatibility
+
+Recommended browsers:
+
+- Google Chrome
+- Microsoft Edge
+
+Speech Recognition support depends on browser implementation of the Web Speech API.
+
+---
+
+## Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/SakshiMore2312/voice-shopping-assistant.git
+```
+
+### Navigate to Project
+
+```bash
+cd voice-shopping-assistant
+```
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run Development Server
+
+```bash
+npm run dev
+```
+
+### Build Production Version
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+---
+
+## Design Decisions
+
+The application follows a modular architecture by separating speech recognition, natural language processing, recommendation logic, and user interface components into independent modules. This improves maintainability and simplifies future feature additions.
+
+Browser-native APIs are used instead of external speech services, reducing project complexity and eliminating third-party dependencies for speech functionality.
+
+React performance optimizations such as memoization and callback caching are used to minimize unnecessary re-renders during continuous speech recognition.
+
+---
+
+## Limitations
+
+- Speech Recognition support varies across browsers.
+- Recognition accuracy depends on microphone quality and background noise.
+- Voice recognition language availability depends on browser support.
+- Some browsers require an internet connection for speech recognition.
+
+---
+
+## Future Improvements
+
+- Multi-language NLP support
+- User authentication
+- Cloud synchronization
+- Shopping history analytics
+- Progressive Web App (PWA)
+- Barcode scanning
+- AI-powered personalized recommendations
+
+---
+
+## Deployment
+
+Frontend (Vercel)
+
+https://voice-shopping-assistant-indol.vercel.app/
+
+Repository
+
+https://github.com/SakshiMore2312/voice-shopping-assistant
+
+---
+
+## License
+
+This project was developed for educational purposes as part of a campus hiring assignment.
