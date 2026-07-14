@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="VoiceCart - A premium voice-activated shopping list assistant with smart recommendations, multi-language support, and client-side NLP." />
+    <title>VoiceCart - Voice Command Shopping Assistant</title>
+    <script>
+      // Capture error details and post them to error-server
+      function logError(errData) {
+        fetch('http://localhost:9999/error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(errData)
+        }).catch(err => console.warn('Could not post error:', err));
+      }
+
+      window.onerror = function(message, source, lineno, colno, error) {
+        logError({
+          type: 'window.onerror',
+          message: message,
+          source: source,
+          lineno: lineno,
+          colno: colno,
+          stack: error ? error.stack : ''
+        });
+        return false;
+      };
+
+      window.addEventListener('unhandledrejection', function(event) {
+        logError({
+          type: 'unhandledrejection',
+          message: event.reason ? event.reason.toString() : 'Unhandled promise rejection',
+          stack: event.reason && event.reason.stack ? event.reason.stack : ''
+        });
+      });
+
+      var originalConsoleError = console.error;
+      console.error = function() {
+        originalConsoleError.apply(console, arguments);
+        var args = Array.prototype.slice.call(arguments).map(function(arg) {
+          if (arg instanceof Error) {
+            return { message: arg.message, stack: arg.stack };
+          }
+          if (typeof arg === 'object') {
+            try { return JSON.stringify(arg); } catch(e) { return String(arg); }
+          }
+          return String(arg);
+        });
+        logError({ type: 'console.error', arguments: args });
+      };
+
+      // Measure layout on load
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var selectors = ['.app-header', '.list-section', '.voice-section', '.sidebar-container', '.dashboard-grid', '.app-container'];
+          var measurements = {};
+          
+          selectors.forEach(function(sel) {
+            var el = document.querySelector(sel);
+            if (el) {
+              var rect = el.getBoundingClientRect();
+              var style = window.getComputedStyle(el);
+              measurements[sel] = {
+                exists: true,
+                rect: {
+                  width: rect.width,
+                  height: rect.height,
+                  top: rect.top,
+                  left: rect.left
+                },
+                display: style.display,
+                visibility: style.visibility,
+                opacity: style.opacity,
+                widthStyle: style.width,
+                heightStyle: style.height,
+                overflow: style.overflow
+              };
+            } else {
+              measurements[sel] = { exists: false };
+            }
+          });
+          
+          logError({ type: 'layout_measurement', data: measurements });
+        }, 1500); // Wait 1.5s for React to finish mounting
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
