@@ -52,8 +52,54 @@ export const normalizeText = (text) => {
   return clean;
 };
 
+// Direct aliases to handle common user terms or colloquial names
+const aliasMap = {
+  "cow milk": "Regular Milk",
+  "regular milk": "Regular Milk",
+  "normal milk": "Regular Milk",
+  "almond milk": "Almond Milk",
+  "organic milk": "Organic Milk",
+  "milk": "Regular Milk",
+  "water": "Bottled Water 6-Pack",
+  "bottled water": "Bottled Water 6-Pack",
+  "pack of water": "Bottled Water 6-Pack",
+  "pasta": "Spaghetti Pasta",
+  "spaghetti": "Spaghetti Pasta",
+  "egg": "Eggs Large 12-Count",
+  "eggs": "Eggs Large 12-Count",
+  "organic eggs": "Organic Eggs 12-Count",
+  "bread": "White Bread",
+  "white bread": "White Bread",
+  "wheat bread": "Whole Wheat Bread",
+  "whole wheat bread": "Whole Wheat Bread",
+  "cheese": "Cheddar Cheese",
+  "cheddar": "Cheddar Cheese",
+  "banana": "Bananas",
+  "bananas": "Bananas",
+  "apple": "Organic Apples",
+  "apples": "Organic Apples",
+  "organic apple": "Organic Apples",
+  "organic apples": "Organic Apples",
+  "strawberry": "Fresh Strawberries",
+  "strawberries": "Fresh Strawberries",
+  "blueberry": "Organic Blueberries",
+  "blueberries": "Organic Blueberries",
+  "watermelon": "Watermelon",
+  "pumpkin": "Organic Pumpkin",
+  "cookie": "Chocolate Cookies",
+  "cookies": "Chocolate Cookies",
+  "chip": "Potato Chips",
+  "chips": "Potato Chips",
+  "yogurt": "Greek Yogurt",
+  "soda": "Classic Soda Can",
+  "coke": "Classic Soda Can",
+  "cola": "Classic Soda Can",
+  "toothpaste": "Regular Toothpaste",
+  "organic toothpaste": "Organic Toothpaste"
+};
+
 /**
- * Find the best product match in the catalog with typo tolerance.
+ * Find the best product match in the catalog with typo tolerance and aliases.
  * @param {string} query - The search query spoken by user.
  * @param {Array} catalogItems - The items catalog.
  * @returns {Object|null} - The matched product or null.
@@ -62,6 +108,22 @@ export const findBestCatalogMatch = (query, catalogItems) => {
   if (!query) return null;
   const target = normalizeText(query);
   
+  // 1. Direct Alias Check
+  if (aliasMap[target]) {
+    const matchedName = aliasMap[target];
+    const match = catalogItems.find(item => item.name === matchedName);
+    if (match) return match;
+  }
+
+  // Check substring in aliases
+  for (const aliasKey of Object.keys(aliasMap)) {
+    if (target === aliasKey || target.includes(aliasKey) || aliasKey.includes(target)) {
+      const matchedName = aliasMap[aliasKey];
+      const match = catalogItems.find(item => item.name === matchedName);
+      if (match) return match;
+    }
+  }
+
   let bestMatch = null;
   let highestScore = 0; // Higher is better (range 0 to 1)
 
@@ -69,7 +131,7 @@ export const findBestCatalogMatch = (query, catalogItems) => {
     const itemName = normalizeText(item.name);
     const itemBrand = normalizeText(item.brand);
     
-    // 1. Direct sub-string matches (extremely high priority)
+    // 2. Direct sub-string matches
     if (itemName === target || target.includes(itemName) || itemName.includes(target)) {
       return item; // Instant match
     }
@@ -80,15 +142,15 @@ export const findBestCatalogMatch = (query, catalogItems) => {
       return item;
     }
 
-    // 2. Levenshtein Distance for typo tolerance
+    // 3. Levenshtein Distance for typo tolerance
     const maxLen = Math.max(target.length, itemName.length);
     if (maxLen === 0) continue;
 
     const dist = getLevenshteinDistance(target, itemName);
     const similarity = 1 - dist / maxLen;
 
-    // Accept as match if similarity exceeds threshold (e.g. 75%)
-    if (similarity > 0.75 && similarity > highestScore) {
+    // Accept as match if similarity exceeds threshold (e.g. 70% for short names)
+    if (similarity > 0.70 && similarity > highestScore) {
       highestScore = similarity;
       bestMatch = item;
     }

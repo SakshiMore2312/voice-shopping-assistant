@@ -1,6 +1,6 @@
 /**
  * Modular recommendations engine for VoiceCart.
- * Computes seasonal suggestions, association rules, and restock alerts.
+ * Computes seasonal suggestions, association rules, restock alerts, and recently purchased items.
  */
 
 // Association Rules (Product A -> Product B)
@@ -43,7 +43,6 @@ export const getFrequentlyBoughtTogether = (currentList, catalog) => {
     }
   });
 
-  // Convert IDs back to actual catalog items (only if in stock)
   return catalog.filter(item => recommendedIds.has(item.id) && item.inStock).slice(0, 3);
 };
 
@@ -72,10 +71,30 @@ export const getSeasonalPicks = (catalog) => {
  * but represent common high-frequency items (like yogurt, toothpaste, soda).
  */
 export const getQuickRestocks = (currentList, catalog) => {
+  if (!currentList) return [];
   const listIds = currentList.map(item => item.id);
   const restockStaples = ["yogurt-greek", "toothpaste-regular", "soda", "bottled-water", "chips-potato"];
 
   return catalog
     .filter(item => restockStaples.includes(item.id) && !listIds.includes(item.id) && item.inStock)
     .slice(0, 2);
+};
+
+/**
+ * Returns recently purchased/removed items from local storage that are in stock and not on the list.
+ */
+export const getRecentlyPurchased = (currentList, catalog) => {
+  try {
+    const saved = localStorage.getItem("recently_purchased");
+    if (!saved) return [];
+    const ids = JSON.parse(saved);
+    const listIds = (currentList || []).map(item => item.id);
+    
+    return catalog
+      .filter(item => ids.includes(item.id) && !listIds.includes(item.id) && item.inStock)
+      .slice(0, 3);
+  } catch (e) {
+    console.error("Failed to parse recently purchased items:", e);
+    return [];
+  }
 };

@@ -4,6 +4,7 @@ const SmartSuggestions = ({
   seasonalItems,
   restockItems,
   freqBoughtItems,
+  recentlyPurchasedItems,
   onAddItem,
   substituteModal,
   onAcceptSubstitute,
@@ -100,6 +101,38 @@ const SmartSuggestions = ({
                 <div className="sugg-info">
                   <div className="sugg-name" style={{ fontSize: "0.8rem" }}>{item.name}</div>
                   <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>Common staple</div>
+                </div>
+                <div className="sugg-price-row">
+                  <span className="sugg-price" style={{ fontSize: "0.8rem" }}>${item.price.toFixed(2)}</span>
+                  <span className="sugg-btn-add" style={{ fontSize: "0.75rem" }}>+ Add</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recently Purchased */}
+      {recentlyPurchasedItems && recentlyPurchasedItems.length > 0 && (
+        <div style={{ marginTop: "0.75rem" }}>
+          <div className="category-header" style={{ fontSize: "0.7rem", padding: 0, background: "none", color: "var(--color-text-secondary)" }}>
+            🕒 Recently Purchased
+          </div>
+          <div className="suggestion-grid" style={{ marginTop: "0.25rem" }}>
+            {recentlyPurchasedItems.map((item) => (
+              <div
+                key={item.id}
+                className="suggestion-card"
+                onClick={() => onAddItem(item.name, 1)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") onAddItem(item.name, 1); }}
+                aria-label={`Add ${item.name} for $${item.price.toFixed(2)}`}
+                style={{ padding: "0.5rem 0.75rem" }}
+              >
+                <div className="sugg-info">
+                  <div className="sugg-name" style={{ fontSize: "0.8rem" }}>{item.name}</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>Buy again</div>
                 </div>
                 <div className="sugg-price-row">
                   <span className="sugg-price" style={{ fontSize: "0.8rem" }}>${item.price.toFixed(2)}</span>

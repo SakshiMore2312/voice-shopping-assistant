@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const VoiceController = ({
   isListening,
@@ -14,7 +14,13 @@ const VoiceController = ({
 }) => {
   const [showHelp, setShowHelp] = useState(false);
 
+  const lastClickRef = useRef(0);
+  
   const toggleListen = () => {
+    const now = Date.now();
+    if (now - lastClickRef.current < 400) return; // Ignore rapid double-clicks
+    lastClickRef.current = now;
+
     if (isListening) {
       stopListening();
     } else {
@@ -164,6 +170,64 @@ const VoiceController = ({
             {transcript ? `"${transcript}"` : "Click the button and speak a command..."}
           </span>
         )}
+      </div>
+
+      {/* Dynamic Status Banner */}
+      <div 
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          padding: "0.65rem 0.75rem",
+          borderRadius: "6px",
+          fontSize: "0.8rem",
+          fontWeight: "500",
+          marginTop: "0.75rem",
+          width: "100%",
+          boxSizing: "border-box",
+          transition: "all 0.2s ease",
+          ...(systemStatus === "Listening" ? {
+            background: "rgba(59,130,246,0.08)",
+            border: "1px solid rgba(59,130,246,0.2)",
+            color: "var(--color-primary)"
+          } : systemStatus === "Processing" ? {
+            background: "rgba(245,158,11,0.08)",
+            border: "1px solid rgba(245,158,11,0.2)",
+            color: "var(--color-warning)"
+          } : systemStatus === "Speaking" ? {
+            background: "rgba(16,185,129,0.08)",
+            border: "1px solid rgba(16,185,129,0.2)",
+            color: "var(--color-success)"
+          } : lastCommandText === "Command not recognized" || (lastCommandText && lastCommandText.includes("not found")) || (lastCommandText && lastCommandText.includes("not recognized")) ? {
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.2)",
+            color: "var(--color-danger)"
+          } : lastCommandText && lastCommandText !== "None" ? {
+            background: "rgba(16,185,129,0.08)",
+            border: "1px solid rgba(16,185,129,0.2)",
+            color: "var(--color-success)"
+          } : {
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-muted)"
+          })
+        }}
+      >
+        <span style={{ fontSize: "1rem" }}>
+          {systemStatus === "Listening" ? "🎙️" : 
+           systemStatus === "Processing" ? "⚙️" : 
+           systemStatus === "Speaking" ? "🔊" : 
+           (lastCommandText === "Command not recognized" || (lastCommandText && lastCommandText.includes("not found")) || (lastCommandText && lastCommandText.includes("not recognized"))) ? "❌" : 
+           (lastCommandText && lastCommandText !== "None") ? "✅" : "💤"}
+        </span>
+        <span>
+          {systemStatus === "Listening" ? "Listening... Speak now" :
+           systemStatus === "Processing" ? "Processing command..." :
+           systemStatus === "Speaking" ? `Speaking: "${lastCommandText}"` :
+           (lastCommandText === "Command not recognized" || (lastCommandText && lastCommandText.includes("not found")) || (lastCommandText && lastCommandText.includes("not recognized"))) ? "Sorry, I didn't understand. Please try again." :
+           (lastCommandText && lastCommandText !== "None") ? `${lastCommandText}` :
+           "Assistant Ready. Click the microphone to speak."}
+        </span>
       </div>
 
       {/* System Status Indicators Dashboard */}

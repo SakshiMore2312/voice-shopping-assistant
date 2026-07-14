@@ -2,7 +2,7 @@ import React from "react";
 
 const ProductCatalogView = ({ searchResults, searchQuery, maxPriceFilter, onAddItem }) => {
   return (
-    <section className="search-section glass-panel" aria-label="Product Catalog and Search">
+    <section className="search-section card-panel" aria-label="Product Catalog and Search">
       <div className="section-title-bar">
         <h3 className="section-title">
           <span>🔍</span> {searchQuery ? "Voice Search Results" : "Store Catalog"}

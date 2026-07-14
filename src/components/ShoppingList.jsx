@@ -112,8 +112,8 @@ const ShoppingList = ({
                           +
                         </button>
                       </div>
-                      <span className="item-price">
-                        ${(item.price * item.quantity).toFixed(2)}
+                      <span className="item-price" style={{ fontSize: item.id.startsWith("custom-") ? "0.75rem" : "0.9rem", color: item.id.startsWith("custom-") ? "var(--color-text-secondary)" : "var(--color-text-primary)" }}>
+                        {item.id.startsWith("custom-") ? "Custom Item" : `$${(item.price * item.quantity).toFixed(2)}`}
                       </span>
                       <button
                         className="btn-delete-item"

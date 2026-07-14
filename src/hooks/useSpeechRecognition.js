@@ -58,10 +58,13 @@ export const useSpeechRecognition = ({ onResult, lang = "en-US" }) => {
     recognition.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
       
-      // Handle blocked permission separately for better UX
       if (event.error === "not-allowed") {
         setError("Microphone access was denied. Please check site permissions.");
-      } else if (event.error !== "no-speech") {
+      } else if (event.error === "no-speech") {
+        setError("No speech was detected. Please try again.");
+      } else if (event.error === "network") {
+        setError("Network connection issue detected. Please check your internet.");
+      } else {
         setError(`Speech Error: ${event.error}`);
       }
       

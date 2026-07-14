@@ -6,7 +6,8 @@ import { findBestCatalogMatch } from "./utils/fuzzyMatch";
 import {
   getFrequentlyBoughtTogether,
   getSeasonalPicks,
-  getQuickRestocks
+  getQuickRestocks,
+  getRecentlyPurchased
 } from "./utils/recommendationsEngine";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 
@@ -56,6 +57,11 @@ function App() {
     localStorage.setItem("assistant_lang", language);
   }, [language]);
 
+  // Scroll to top on mount to safeguard against browser scroll restoration issues
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Toast Helpers
   const addToast = useCallback((message, type = "success") => {
     setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message, type }]);
@@ -63,6 +69,18 @@ function App() {
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const trackRecentlyPurchased = useCallback((id) => {
+    if (!id || id.startsWith("custom-")) return;
+    try {
+      const saved = localStorage.getItem("recently_purchased");
+      const list = saved ? JSON.parse(saved) : [];
+      const updated = [id, ...list.filter((x) => x !== id)].slice(0, 10);
+      localStorage.setItem("recently_purchased", JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Failed to save recently purchased item:", e);
+    }
   }, []);
 
   // 2. Instantiate Speech Recognition Hook Early (to avoid reference order bugs)
@@ -192,33 +210,44 @@ function App() {
       else if (drinkBeverages.some((kw) => nameLower.includes(kw))) category = "Beverages";
 
       const formattedName = itemName.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-      const newItem = {
-        id: `custom-${Date.now()}`,
-        name: formattedName,
-        category,
-        price: 1.99, 
-        brand: "Generic",
-        isOrganic,
-        inStock: true,
-        substitute: null,
-        season: "all",
-        quantity: parsedQty,
-        checked: false
-      };
-
-      setShoppingList((prev) => [...prev, newItem]);
+      
+      // Prevent duplicate custom items (merge names)
+      setShoppingList((prev) => {
+        const existingIndex = prev.findIndex((i) => i.name.toLowerCase() === formattedName.toLowerCase());
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          const newQty = Math.min(99, updated[existingIndex].quantity + parsedQty);
+          updated[existingIndex] = { ...updated[existingIndex], quantity: newQty };
+          return updated;
+        } else {
+          const newItem = {
+            id: `custom-${Date.now()}`,
+            name: formattedName,
+            category,
+            price: 0, 
+            brand: "Generic",
+            isOrganic,
+            inStock: true,
+            substitute: null,
+            season: "all",
+            quantity: parsedQty,
+            checked: false
+          };
+          return [...prev, newItem];
+        }
+      });
 
       const confirmMsg =
         language === "hi-IN"
-          ? `कस्टम आइटम ${newItem.name} जोड़ा गया।`
+          ? `कस्टम आइटम ${formattedName} जोड़ा गया।`
           : language === "es-ES"
-          ? `Se agregó el artículo ${newItem.name} a la lista.`
-          : `Added custom item ${newItem.name} to the list.`;
+          ? `Se agregó el artículo ${formattedName} a la lista.`
+          : `Added custom item ${formattedName} to the list.`;
 
       addToast(confirmMsg, "success");
       speakFeedback(confirmMsg);
       setLastCommandText(confirmMsg);
-      return { success: true, item: newItem.name, qty: parsedQty };
+      return { success: true, item: formattedName, qty: parsedQty };
     }
   }, [language, addToast, speakFeedback]);
 
@@ -231,6 +260,7 @@ function App() {
 
     if (match) {
       setShoppingList((prev) => prev.filter((i) => i.id !== match.id));
+      trackRecentlyPurchased(match.id);
       const confirmMsg =
         language === "hi-IN"
           ? `${match.name} हटा दिया गया है।`
@@ -254,7 +284,7 @@ function App() {
         : errorMsg
     );
     return { error: errorMsg };
-  }, [language, shoppingList, addToast, speakFeedback]);
+  }, [language, shoppingList, addToast, speakFeedback, trackRecentlyPurchased]);
 
   // Toggle Checkbox
   const handleToggleCheck = useCallback((id) => {
@@ -271,10 +301,11 @@ function App() {
         addToast(`Removed ${item.name}`, "success");
         speakFeedback(`Removed ${item.name}`);
         setLastCommandText(`Removed ${item.name}`);
+        trackRecentlyPurchased(id);
       }
       return prev.filter((i) => i.id !== id);
     });
-  }, [addToast, speakFeedback]);
+  }, [addToast, speakFeedback, trackRecentlyPurchased]);
 
   // Update quantity manually
   const handleUpdateQuantity = useCallback((id, delta) => {
@@ -291,12 +322,15 @@ function App() {
 
   // Clear List
   const handleClearList = useCallback(() => {
+    shoppingList.forEach((item) => {
+      trackRecentlyPurchased(item.id);
+    });
     setShoppingList([]);
     const confirmMsg = "Shopping list cleared.";
     addToast(confirmMsg, "success");
     speakFeedback(confirmMsg);
     setLastCommandText(confirmMsg);
-  }, [addToast, speakFeedback]);
+  }, [shoppingList, addToast, speakFeedback, trackRecentlyPurchased]);
 
   // Accept Substitute
   const handleAcceptSubstitute = useCallback(() => {
@@ -408,13 +442,14 @@ function App() {
     else if (parsed.action === "ADD") {
       if (!parsed.item) {
         pushLog({ time: timeStr, raw: text, action: "ADD", error: "No item detected" });
-        speakFeedback(
+        const errMsg = 
           language === "hi-IN"
             ? "कृपया वस्तु का नाम बताएं।"
             : language === "es-ES"
             ? "Por favor diga el nombre del artículo."
-            : "Please specify an item to add."
-        );
+            : "Please specify an item to add.";
+        speakFeedback(errMsg);
+        addToast(errMsg, "warning");
       } else {
         const res = addItemToList(parsed.item, parsed.quantity, parsed.isOrganic);
         pushLog({
@@ -432,11 +467,12 @@ function App() {
     else if (parsed.action === "REMOVE") {
       if (!parsed.item) {
         pushLog({ time: timeStr, raw: text, action: "REMOVE", error: "No item detected" });
-        speakFeedback(
+        const errMsg = 
           language === "hi-IN"
             ? "कृपया हटाने वाली वस्तु का नाम बताएं।"
-            : "Please specify an item to remove."
-        );
+            : "Please specify an item to remove.";
+        speakFeedback(errMsg);
+        addToast(errMsg, "warning");
       } else {
         const res = removeItemFromList(parsed.item);
         pushLog({
@@ -450,6 +486,63 @@ function App() {
       }
     } 
     
+    else if (parsed.action === "UPDATE_QUANTITY") {
+      const normalized = parsed.item.toLowerCase().trim();
+      const existingItem = shoppingList.find(
+        (i) => i.name.toLowerCase().includes(normalized) || normalized.includes(i.name.toLowerCase())
+      );
+
+      if (existingItem) {
+        if (parsed.quantity === 0) {
+          removeItemFromList(existingItem.name);
+          return;
+        }
+
+        setShoppingList((prev) =>
+          prev.map((item) => {
+            if (item.id === existingItem.id) {
+              return { ...item, quantity: parsed.quantity };
+            }
+            return item;
+          })
+        );
+
+        const confirmMsg =
+          language === "hi-IN"
+            ? `${existingItem.name} की मात्रा ${parsed.quantity} कर दी गई है।`
+            : language === "es-ES"
+            ? `Cantidad de ${existingItem.name} actualizada a ${parsed.quantity}.`
+            : `Updated ${existingItem.name} quantity to ${parsed.quantity}.`;
+
+        addToast(confirmMsg, "success");
+        speakFeedback(confirmMsg);
+        setLastCommandText(confirmMsg);
+        pushLog({
+          time: timeStr,
+          raw: text,
+          action: "UPDATE_QUANTITY",
+          item: existingItem.name,
+          quantity: parsed.quantity
+        });
+      } else {
+        const errorMsg = `Could not find "${parsed.item}" in your list.`;
+        addToast(errorMsg, "warning");
+        speakFeedback(
+          language === "hi-IN"
+            ? `आपकी सूची में ${parsed.item} नहीं मिला।`
+            : errorMsg
+        );
+        pushLog({
+          time: timeStr,
+          raw: text,
+          action: "UPDATE_QUANTITY",
+          item: parsed.item,
+          quantity: parsed.quantity,
+          error: errorMsg
+        });
+      }
+    }
+
     else if (parsed.action === "SEARCH" || parsed.action === "FILTER") {
       if (!parsed.item && !parsed.maxPrice) {
         setSearchQuery("");
@@ -479,18 +572,21 @@ function App() {
     } 
     
     else {
-      pushLog({ time: timeStr, raw: text, action: "UNKNOWN", error: "Command not recognized" });
-      speakFeedback(
+      const errorMsg = 
         language === "hi-IN"
           ? "मुझे समझ नहीं आया, कृपया फिर से कहें।"
           : language === "es-ES"
-          ? "No entendí, por favor repita."
-          : "Command not recognized. Try saying 'add milk' or 'find cookies'."
-      );
+          ? "Lo siento, no entendí. Por favor intente de nuevo."
+          : "Sorry, I didn't understand. Please try again.";
+      
+      pushLog({ time: timeStr, raw: text, action: "UNKNOWN", error: "Command not recognized" });
+      addToast(errorMsg, "warning");
+      speakFeedback(errorMsg);
+      setLastCommandText("Command not recognized");
     }
 
     setIsProcessing(false);
-  }, [language, substituteModal, addItemToList, removeItemFromList, handleClearList, handleAcceptSubstitute, handleDeclineSubstitute, speakFeedback]);
+  }, [language, substituteModal, shoppingList, addItemToList, removeItemFromList, handleClearList, handleAcceptSubstitute, handleDeclineSubstitute, speakFeedback, addToast, trackRecentlyPurchased]);
 
   // Calculate search items in real-time
   const memoizedSearchResults = useMemo(() => {
@@ -513,6 +609,7 @@ function App() {
   const memoizedSeasonalItems = useMemo(() => getSeasonalPicks(catalog), []);
   const memoizedRestockItems = useMemo(() => getQuickRestocks(shoppingList, catalog), [shoppingList]);
   const memoizedFreqBoughtItems = useMemo(() => getFrequentlyBoughtTogether(shoppingList, catalog), [shoppingList]);
+  const memoizedRecentlyPurchased = useMemo(() => getRecentlyPurchased(shoppingList, catalog), [shoppingList]);
 
   // Calculate systemStatus string in real-time
   const systemStatus = useMemo(() => {
@@ -599,6 +696,7 @@ function App() {
               seasonalItems={memoizedSeasonalItems}
               restockItems={memoizedRestockItems}
               freqBoughtItems={memoizedFreqBoughtItems}
+              recentlyPurchasedItems={memoizedRecentlyPurchased}
               onAddItem={addItemToList}
               substituteModal={substituteModal}
               onAcceptSubstitute={handleAcceptSubstitute}
