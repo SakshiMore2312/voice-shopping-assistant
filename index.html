@@ -51,19 +51,21 @@
         logError({ type: 'console.error', arguments: args });
       };
 
-      // Measure layout on load
+      // Measure layout and text content on load
       window.addEventListener('load', function() {
         setTimeout(function() {
           var selectors = ['.app-header', '.list-section', '.voice-section', '.sidebar-container', '.dashboard-grid', '.app-container'];
-          var measurements = {};
+          var data = {};
           
           selectors.forEach(function(sel) {
             var el = document.querySelector(sel);
             if (el) {
               var rect = el.getBoundingClientRect();
               var style = window.getComputedStyle(el);
-              measurements[sel] = {
+              data[sel] = {
                 exists: true,
+                textContent: el.textContent.trim().substring(0, 100), // First 100 chars
+                htmlContent: el.innerHTML.substring(0, 100),
                 rect: {
                   width: rect.width,
                   height: rect.height,
@@ -73,16 +75,16 @@
                 display: style.display,
                 visibility: style.visibility,
                 opacity: style.opacity,
-                widthStyle: style.width,
-                heightStyle: style.height,
-                overflow: style.overflow
+                color: style.color,
+                backgroundColor: style.backgroundColor,
+                border: style.border
               };
             } else {
-              measurements[sel] = { exists: false };
+              data[sel] = { exists: false };
             }
           });
           
-          logError({ type: 'layout_measurement', data: measurements });
+          logError({ type: 'layout_and_text_measurement', data: data });
         }, 1500); // Wait 1.5s for React to finish mounting
       });
     </script>
